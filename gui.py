@@ -1,13 +1,15 @@
 import sys
+import shutil
 import os
 import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton,
     QFileDialog, QLabel, QFrame, QSizePolicy
 )
-from PyQt5.QtGui import QPixmap, QFont
+from PyQt5.QtGui import QPixmap, QFont, QIcon
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox
+from qt_material import apply_stylesheet
 
 class VideoEditorGUI(QWidget):
     def __init__(self):
@@ -16,7 +18,8 @@ class VideoEditorGUI(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("Video Editor GUI Frontend")
+        self.setWindowTitle("VideoEditBot Client")
+        self.setWindowIcon(QIcon("ic/Body.png"))
         self.setGeometry(100, 100, 400, 200)  # Increased height to better fit banner
 
         layout = QVBoxLayout()
@@ -64,11 +67,11 @@ class VideoEditorGUI(QWidget):
         layout.addWidget(self.status_label)
         
         # Label and input field for command-line arguments
-        self.beh_label = QLabel(f"When processing, the edited video replaces the input video. Remember to BACK UP YOUR WORK! ")
+        self.beh_label = QLabel(f"Copy the file you want to edit to the root folder of this app in order for it to work.")
         layout.addWidget(self.beh_label)
 
         # Label and input field for command-line arguments
-        self.conk_label = QLabel(f"Built on PyQt5, and VEB rev. 527c8a3. Credit to GanerCodes for the original VEB.")
+        self.conk_label = QLabel(f"Credit to GanerCodes for the original VideoEditBot")
         layout.addWidget(self.conk_label)
 
         self.setLayout(layout)
@@ -86,16 +89,26 @@ class VideoEditorGUI(QWidget):
 
     def run_command(self):
         if not self.input_file:
-            self.status_label.setText("Please select an input video file.")
+            self.status_label.setText("Please select an input file.")
             return
 
         args = self.args_line.text().strip()
-        # Build the command string. Adjust if your command needs a different structure.
-        command = f"destroy \"{args}\" \"{self.input_file}\""
+        input_file_name = os.path.basename(self.input_file)  # Get the file name
+        app_root = os.getcwd()  # Get the current working directory (root of the app)
+        input_file_in_root = os.path.join(app_root, input_file_name)  # Path to file in root
+
+        # Build the command string using the copied file name
+        command = f"destroy \"{args}\" \"{input_file_name}\""
         self.status_label.setText(f"Running: {command}")
 
         try:
-            result = subprocess.run(command)
+            result = subprocess.run(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
             if result.returncode == 0:
                 self.status_label.setText("Command executed successfully!")
                 # Show success popup
@@ -106,9 +119,8 @@ class VideoEditorGUI(QWidget):
                 msg_box.setStandardButtons(QMessageBox.Ok)
                 msg_box.exec_()
             else:
-                error_message = result.stderr or "An error occurred."
+                error_message = result.stderr or "An unknown error occurred."
                 self.status_label.setText(f"Error: {error_message}")
-                print(result)
                 # Show error popup
                 error_box = QMessageBox()
                 error_box.setIcon(QMessageBox.Critical)
@@ -130,7 +142,7 @@ class VideoEditorGUI(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setStyle('Fusion')  # Set the application style to Fusion
+    apply_stylesheet(app, theme='dark_amber.xml')  # Set the application style to Fusion
     gui = VideoEditorGUI()
     gui.show()
     sys.exit(app.exec_())
