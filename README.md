@@ -1,4 +1,4 @@
-# <img src="https://github.com/DevelopCMD/videoeditbot-portable/blob/main/banner.png?raw=true" height="128"/>
+# <img src="https://github.com/DevelopCMD/videoeditbot-portable/blob/main/banner-szK.png?raw=true" height="180"/>
 A portable version of VideoEditBot.
 ---
 ![preview](https://github.com/DevelopCMD/videoeditbot-portable/blob/main/example.png?raw=true)
