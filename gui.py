@@ -1,6 +1,9 @@
 import sys
 import shutil
+import json
+import sox
 import os
+import uuid
 import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton,
@@ -8,8 +11,118 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap, QFont, QIcon
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QListWidget
 from qt_material import apply_stylesheet
+
+class StartupScreen(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowIcon(QIcon("ic/Body.png")) 
+        self.setWindowTitle("VideoEditBot Client")
+        self.setGeometry(100, 100, 400, 200)
+        
+        layout = QVBoxLayout()
+
+        # Banner at the top
+        self.banner = QLabel(self)
+        self.banner.setAlignment(Qt.AlignCenter)
+
+        # Using an image as a banner (uncomment if you have an image)
+        pixmap = QPixmap("banner-sz.png")
+        self.banner.setPixmap(pixmap)
+        
+        # Text-based banner
+        # self.banner.setText("Video Editor")
+        # self.banner.setFont(QFont("Arial", 24, QFont.Bold))
+        self.banner.setFixedHeight(96)  # Set a fixed height for the banner
+        self.banner.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(self.banner)
+
+        # Horizontal line separator
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        layout.addWidget(line)
+
+        # Label and input field for command-line arguments
+        self.welcome_label = QLabel("How would you like to edit your videos today?")
+        layout.addWidget(self.welcome_label)
+        self.welcome_label.setAlignment(Qt.AlignCenter)
+
+        # Button for predefined arguments
+        self.predefined_button = QPushButton("Choose from a Predefined List")
+        self.predefined_button.clicked.connect(self.open_predefined)
+        layout.addWidget(self.predefined_button)
+
+        # Button for custom arguments
+        self.custom_button = QPushButton("Enter Custom Command")
+        self.custom_button.clicked.connect(self.open_custom)
+        layout.addWidget(self.custom_button)
+
+        self.setLayout(layout)
+
+    def open_predefined(self):
+        self.predefined_screen = PredefinedScreen()
+        self.predefined_screen.show()
+        self.close()
+
+    def open_custom(self):
+        self.main_screen = VideoEditorGUI()  # This is your main video editor GUI class
+        self.main_screen.show()
+        self.close()
+
+class PredefinedScreen(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Choose Predefined Arguments")
+        self.setWindowIcon(QIcon("ic/Body.png"))        
+        self.setGeometry(100, 100, 400, 300)
+
+        layout = QVBoxLayout()
+
+        self.list_widget = QListWidget()
+        layout.addWidget(self.list_widget)
+
+        # Load predefined arguments
+        self.load_predefined_arguments()
+
+        self.select_button = QPushButton("Select")
+        self.select_button.clicked.connect(self.select_predefined)
+        layout.addWidget(self.select_button)
+
+        self.setLayout(layout)
+
+    def load_predefined_arguments(self):
+        predefined_folder = "predefined"
+        if not os.path.exists(predefined_folder):
+            os.makedirs(predefined_folder)
+
+        for file in os.listdir(predefined_folder):
+            if file.endswith(".veb"):
+                with open(os.path.join(predefined_folder, file), 'r') as f:
+                    try:
+                        data = json.load(f)
+                        title = data.get("title", "Unnamed")
+                        self.list_widget.addItem(title)
+                    except json.JSONDecodeError:
+                        print(f"Error reading {file}")
+
+    def select_predefined(self):
+        selected_item = self.list_widget.currentItem()
+        if selected_item:
+            title = selected_item.text()
+            predefined_folder = "predefined"
+            for file in os.listdir(predefined_folder):
+                if file.endswith(".veb"):
+                    with open(os.path.join(predefined_folder, file), 'r') as f:
+                        data = json.load(f)
+                        if data.get("title") == title:
+                            arguments = data.get("arguments", "")
+                            # Open main editor and pre-fill arguments
+                            self.main_screen = VideoEditorGUI()
+                            self.main_screen.args_line.setText(arguments)
+                            self.main_screen.show()
+                            self.close()
 
 class VideoEditorGUI(QWidget):
     def __init__(self):
@@ -97,8 +210,28 @@ class VideoEditorGUI(QWidget):
         app_root = os.getcwd()  # Get the current working directory (root of the app)
         input_file_in_root = os.path.join(app_root, input_file_name)  # Path to file in root
 
+        # Generate a unique filename using UUID
+        unique_name = f"{uuid.uuid4().hex}.mp4"
+        duplicated_file_path = os.path.join(app_root, unique_name)
+    
+        try:
+            # Duplicate the video with the unique name
+            shutil.copy(input_file_in_root, duplicated_file_path)
+            self.status_label.setText(f"Duplicated video as {unique_name} for editing.")
+        except Exception as e:
+            self.status_label.setText(f"Error duplicating file: {e}")
+            # Show error popup for file duplication issue
+            error_box = QMessageBox()
+            error_box.setIcon(QMessageBox.Critical)
+            error_box.setWindowTitle("File Duplication Error")
+            error_box.setText("Failed to duplicate the video file for editing.")
+            error_box.setInformativeText(str(e))
+            error_box.setStandardButtons(QMessageBox.Ok)
+            error_box.exec_()
+            return
+            
         # Build the command string using the copied file name
-        command = f"destroy \"{args}\" \"{input_file_name}\""
+        command = f"destroy \"{args}\" \"{unique_name}\""
         self.status_label.setText(f"Running: {command}")
 
         try:
@@ -143,6 +276,6 @@ class VideoEditorGUI(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     apply_stylesheet(app, theme='dark_amber.xml')  # Set the application style to Fusion
-    gui = VideoEditorGUI()
-    gui.show()
+    startup = StartupScreen()
+    startup.show()
     sys.exit(app.exec_())

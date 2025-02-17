@@ -1,6 +1,6 @@
 from time import time
 start_time = time()
-import sys, ffmpeg
+import sys, ffmpeg, uuid
 
 from subprocess import DEVNULL, STDOUT, check_call, getoutput, run
 from itertools  import repeat, chain
@@ -1065,7 +1065,8 @@ def videoEdit(properFileName, args, disallowTimecodeBreak = False, keepExtraFile
         if path.isdir(newPath):
             rmtree(newPath)
         makedirs(newPath)
-        newFileName = f"{getName(properFileName)}.{getExt(properFileName)}"
+        # newFileName = f"{getName(properFileName)}.{getExt(properFileName)}"
+        newFileName = f"{uuid.uuid4()}.{getExt(properFileName)}"
         rename(f"{properFileName}", f"{newPath}/{newFileName}")
         if logErrors:
             backupFileName = f"BACKUP_{newFileName}"
