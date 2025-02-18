@@ -6,7 +6,7 @@ A portable version of VideoEditBot.
 Remember VideoEditBot? The discord editing bot that was popular a long time ago? With this program, you can experience the bot **locally** right on your computer! Just enter the arguments (e.g. "speed=2" "pch 15"), click Run Command, and there is your processed video! For more commands, please refer to COMMANDS.md
 
 This program was tested on Windows 11 with Python 3.11. However, this program can work on as low as Windows 8.1.<br>
-**NOTE:** You need to have the ffmpeg libraries installed on your system for this to work. You can get them [here](https://www.gyan.dev/ffmpeg/builds/).<br>
+**NOTE:** You need to have the FFmpeg and SoX libraries installed on your system for this to work. You can get FFmpeg [here](https://www.gyan.dev/ffmpeg/builds/) and SoX [here.](https://sourceforge.net/projects/sox/files/sox/14.4.2/)<br>
 <br>
 For best performance, test on the latest Windows versions.<br>
 <br>
