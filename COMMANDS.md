@@ -1,7 +1,7 @@
 Commands
 ===========
 
-These are commands that the bot supports.
+These are commands that the program supports.
 
 A command is declared as `filtername=value`. For example, to add 100 bass boost, use `bass=100`.
 
